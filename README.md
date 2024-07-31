@@ -138,4 +138,4 @@ Se você deseja contribuir para a biblioteca, siga estas etapas:
 
 Esta biblioteca está licenciada sob a [MIT License](LICENSE).
 
->>>>>>> d2802d2 (add first commit)
+
