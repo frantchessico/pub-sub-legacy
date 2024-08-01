@@ -1,27 +1,24 @@
 
+# @savanapoint/pub-sub
 
-# `@savanapoint/pub-sub`
+The `@savanapoint/pub-sub` library facilitates implementing a pub/sub messaging system using Firebase Firestore and TypeScript. It enables publishing messages to channels and subscribing to receive messages from those channels.
 
-`@savanapoint/pub-sub` é uma biblioteca para gerenciar o padrão de publicação/assinatura usando o Firebase Firestore. Ela permite publicar e assinar mensagens em canais específicos com suporte a múltiplos assinantes.
+## Installation
 
-## Instalação
-
-Para instalar a biblioteca, use o npm ou yarn:
+To install the library, run the following command:
 
 ```bash
 npm install @savanapoint/pub-sub
-# ou
-yarn add @savanapoint/pub-sub
 ```
 
-## Configuração
+## Usage
 
-### Inicializar o Pub/Sub
+### Initialization
 
-Antes de usar qualquer funcionalidade da biblioteca, você precisa inicializar o Pub/Sub com a configuração do Firebase:
+First, initialize the `PubSub` class with your Firebase configuration:
 
 ```typescript
-import { initializePubSub } from '@savanapoint/pub-sub';
+import PubSub from '@savanapoint/pub-sub';
 
 const firebaseConfig = {
   apiKey: process.env.FIREBASE_API_KEY,
@@ -30,112 +27,62 @@ const firebaseConfig = {
   projectId: process.env.FIREBASE_PROJECT_ID,
   storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.FIREBASE_APP_ID
+  appId: process.env.FIREBASE_APP_ID,
 };
 
-initializePubSub(firebaseConfig);
+const pubSub = new PubSub(firebaseConfig);
 ```
 
-## Métodos
+### Publish a Message
 
-### `initializePubSub(config: Object): void`
-
-Inicializa o Pub/Sub com a configuração do Firebase.
-
-**Parâmetros:**
-- `config`: Um objeto contendo a configuração do Firebase.
-
-### `publishMessage(channel: string, message: string, subscriber: string): Promise<void>`
-
-Publica uma mensagem em um canal específico.
-
-**Parâmetros:**
-- `channel`: O nome do canal onde a mensagem será publicada.
-- `message`: O conteúdo da mensagem a ser publicada.
-- `subscriber`: O ID do assinante para quem a mensagem é direcionada.
-
-**Retorno:**
-- `Promise<void>`: Retorna uma Promise que é resolvida quando a mensagem é publicada.
-
-**Exemplo:**
+To publish a message to a channel, use the `publish` method of the `PubSub` class:
 
 ```typescript
-import { publishMessage } from '@savanapoint/pub-sub';
-
-publishMessage('newsletter', 'Sua mensagem aqui', 'savanapoint')
-  .then(() => console.log('Mensagem publicada com sucesso'))
-  .catch(error => console.error('Erro ao publicar mensagem:', error));
-```
-
-### `subscribeToChannel(channel: string, subscriberIds: string[]): Promise<string>`
-
-Inscreve um ou mais assinantes em um canal específico e retorna a mensagem recebida.
-
-**Parâmetros:**
-- `channel`: O nome do canal ao qual o assinante se inscreve.
-- `subscriberIds`: Um array de IDs de assinantes que devem receber as mensagens.
-
-**Retorno:**
-- `Promise<string>`: Retorna uma Promise que resolve com uma string contendo a mensagem recebida quando uma nova mensagem é recebida.
-
-**Exemplo:**
-
-```typescript
-import { subscribeToChannel } from '@savanapoint/pub-sub';
-
-subscribeToChannel('newsletter', ['savanapoint'])
-  .then((message: string) => {
-    console.log('Mensagem recebida:', message);
+pubSub.publish('channelName', 'Hello, World!', ['subscriberId1', 'subscriberId2'])
+  .then(() => {
+    console.log('Message published successfully');
   })
-  .catch(error => console.error('Erro ao se inscrever no canal:', error));
+  .catch((error) => {
+    console.error('Error publishing message:', error);
+  });
 ```
 
-## Tipos
+- **`channel`**: The name of the channel where the message will be published.
+- **`message`**: The content of the message to be published.
+- **`subscribers`**: List of subscriber IDs who will receive the message.
 
-### `Message`
+### Subscribe to a Channel
 
-Interface que representa uma mensagem recebida.
-
-**Propriedades:**
-- `message`: O conteúdo da mensagem.
-- `timestamp`: O timestamp da mensagem (`Timestamp` do Firebase Firestore).
-- `read`: Um booleano indicando se a mensagem foi lida.
-- `subscriber`: O ID do assinante associado à mensagem.
-
-**Exemplo:**
+To subscribe to a channel and receive messages, use the `subscribe` method of the `PubSub` class:
 
 ```typescript
-import { Timestamp } from 'firebase/firestore';
-
-export interface Message {
-  message: string;
-  timestamp: Timestamp;
-  read: boolean;
-  subscriber: string;
-}
+pubSub.subscribe('channelName', ['subscriberId1', 'subscriberId2'], (message) => {
+    console.log('Received message:', message);
+  })
+  .catch((error) => {
+    console.error('Error subscribing to channel:', error);
+  });
 ```
 
-## Build
+- **`channel`**: The name of the channel to which the subscribers are subscribing.
+- **`subscriberIds`**: List of subscriber IDs who should receive the messages.
+- **`onMessage`**: Callback function that will be called when a new message is received. It receives the message as an argument.
 
-Para construir a biblioteca, use o comando:
+### Error Handling
 
-```bash
-npm run build
-```
+- **Errors When Publishing Messages:** Any error that occurs during the publishing of the message will be caught and logged to the console.
+- **Errors When Subscribing to Channels:** Any error that occurs during subscription to the channel will be caught and logged to the console.
 
-Isso compila o código TypeScript para JavaScript e gera os arquivos de saída na pasta `dist`.
+## Contributing
 
-## Contribuição
+If you would like to contribute to the library, please follow these steps:
 
-Se você deseja contribuir para a biblioteca, siga estas etapas:
+1. Fork the repository.
+2. Create a branch for your changes.
+3. Make your modifications and test them.
+4. Submit a pull request to the main repository.
 
-1. Faça um fork do repositório.
-2. Crie uma branch para suas alterações.
-3. Faça suas modificações e teste-as.
-4. Envie um pull request com uma descrição detalhada das alterações.
+## License
 
-## Licença
-
-Esta biblioteca está licenciada sob a [MIT License](LICENSE).
-
+The library is licensed under the [MIT License](LICENSE).
 

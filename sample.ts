@@ -1,4 +1,6 @@
-import { initializePubSub, subscribeToChannel, publishMessage } from "./dist";
+import PubSub from './dist'
+
+
 
 
 
@@ -17,9 +19,11 @@ import { initializePubSub, subscribeToChannel, publishMessage } from "./dist";
     messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
     appId: process.env.FIREBASE_APP_ID
   };
+const pub = new PubSub(firebaseConfig, true)
 
-initializePubSub(firebaseConfig);
 
-subscribeToChannel('newsletter', ['savanapoint']);
+pub.subscribe('newsletter', ['savanapoint'], (message) => {
+  console.log(message)
+})
 
-publishMessage('newsletter', JSON.stringify({ name: 'Nome Exemplo', email: 'exemplo@example.com' }), ['savanapoint']);
+pub.publish('newsletter', JSON.stringify({ name: 'Nome Exemplo', email: 'exemplo@example.com' }), ['savanapoint']);
