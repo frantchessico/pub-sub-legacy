@@ -1,94 +1,92 @@
-const axios = require('axios');
+import { initializeApp, FirebaseApp } from 'firebase/app';
+import { getFirestore, Firestore, addDoc, collection, serverTimestamp, query, orderBy, where, onSnapshot, updateDoc, doc } from 'firebase/firestore';
 
-// Função para gerar um e-mail aleatório único
-const generateUniqueEmail = (existingEmails) => {
-  let email;
-  do {
-    const randomString = Math.random().toString(36).substring(2, 15);
-    email = `${randomString}@example.com`;
-  } while (existingEmails.has(email));
-  existingEmails.add(email);
-  return email;
-};
+/**
+ * Classe PubSub para gerenciar publicação e assinatura de mensagens usando Firebase Firestore.
+ */
+class PubSub {
+  private firestoreInstance: Firestore | null = null;
 
-// Função para gerar um nome aleatório único
-const generateUniqueName = (existingNames) => {
-  const firstNames = [
-    'Alice', 'Bob', 'Charlie', 'Daisy', 'Eve', 'Frank', 'Grace', 'Hannah', 'Ivy', 'Jack',
-    'Kathy', 'Liam', 'Mona', 'Nina', 'Oscar', 'Paul', 'Quinn', 'Rita', 'Sam', 'Tina',
-    'Ursula', 'Victor', 'Wendy', 'Xander', 'Yara', 'Zane'
-  ];
-
-  const lastNames = [
-    'Smith', 'Johnson', 'Williams', 'Jones', 'Brown', 'Davis', 'Miller', 'Wilson', 'Moore', 'Taylor',
-    'Anderson', 'Thomas', 'Jackson', 'White', 'Harris', 'Martin', 'Thompson', 'Garcia', 'Martinez', 'Robinson'
-  ];
-
-  let name;
-  do {
-    const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
-    const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
-    name = `${firstName} ${lastName}`;
-  } while (existingNames.has(name));
-  existingNames.add(name);
-  return name;
-};
-
-// Função para criar um usuário com e-mail e nome aleatório
-const createUser = async (name, email) => {
-  try {
-    const response = await axios.post('https://genesispay-pub-sample.bs0y0v.easypanel.host/api/users/new', {
-      name,
-      email
-    });
-    console.log(`Usuário criado com e-mail ${email} e nome ${name}:`, response.data);
-    return { name, email };
-  } catch (error) {
-    console.error(`Erro ao criar usuário com e-mail ${email} e nome ${name}:`, error.response ? error.response.data : error.message);
-    return null;
+  /**
+   * Construtor da classe PubSub.
+   * @param {object} firebaseConfig - Configuração do Firebase.
+   */
+  constructor(firebaseConfig: object) {
+    const app: FirebaseApp = initializeApp(firebaseConfig);
+    this.firestoreInstance = getFirestore(app);
   }
-};
 
-// Função para criar um post com conteúdo aleatório
-const createPost = async (name, email) => {
-  try {
-    const response = await axios.post('https://genesispay-pub-sample.bs0y0v.easypanel.host/api/users/new', {
-      name,
-      email,
-      content: `Este é um post de ${name} com o e-mail ${email}`
-    });
-    console.log(`Post criado por ${name} com e-mail ${email}:`, response.data);
-  } catch (error) {
-    console.error(`Erro ao criar post por ${name} com e-mail ${email}:`, error.response ? error.response.data : error.message);
-  }
-};
-
-// Função principal para criar 20 mil usuários únicos e fazer posts
-const main = async () => {
-  const numberOfUsers = 20000; // Número de usuários a serem criados
-  const batchSize = 100; // Número de usuários por lote
-  const existingEmails = new Set();
-  const existingNames = new Set();
-
-  for (let i = 0; i < numberOfUsers; i += batchSize) {
-    const promises = [];
-    for (let j = 0; j < batchSize && i + j < numberOfUsers; j++) {
-      const name = generateUniqueName(existingNames);
-      const email = generateUniqueEmail(existingEmails);
-      promises.push(createUser(name, email));
+  /**
+   * Obtém a instância inicializada do Firestore.
+   * @returns {Firestore} - A instância do Firestore.
+   * @throws {Error} - Se a instância do Firestore não estiver inicializada.
+   * @private
+   */
+  private getFirestoreInstance(): Firestore {
+    if (!this.firestoreInstance) {
+      throw new Error('Firestore não inicializado.');
     }
-
-    const users = await Promise.all(promises); // Espera todas as promessas do lote atual serem resolvidas
-
-    const postPromises = users.map(user => {
-      if (user) {
-        return createPost(user.name, user.email);
-      }
-      return Promise.resolve();
-    });
-
-    await Promise.all(postPromises); // Espera todas as promessas de post do lote atual serem resolvidas
+    return this.firestoreInstance;
   }
-};
 
-main();
+  /**
+   * Publica uma mensagem em um canal específico.
+   * @param {string} channel - Nome do canal.
+   * @param {string} message - Mensagem a ser publicada.
+   * @param {string[]} subscribers - Lista de IDs dos subscribers.
+   * @returns {Promise<void>} - Uma promessa que resolve quando a mensagem é publicada.
+   */
+  async publish(channel: string, message: string, subscribers: string[]): Promise<void> {
+    const firestore = this.getFirestoreInstance();
+    for (const subscriber of subscribers) {
+      await addDoc(collection(firestore, 'channels', channel, 'messages'), {
+        message,
+        timestamp: serverTimestamp(),
+        read: false,
+        subscriber
+      });
+      console.log(`Mensagem publicada no canal ${channel} para ${subscriber}: ${message}`);
+    }
+  }
+
+  /**
+   * Inscreve um ou mais subscribers em um canal específico e processa mensagens recebidas.
+   * @param {string} channel - Nome do canal.
+   * @param {string[]} subscriberIds - IDs dos subscribers que devem receber as mensagens.
+   * @param {Function} onMessage - Função callback que será chamada quando uma nova mensagem for recebida.
+   * @returns {void}
+   */
+  subscribe(channel: string, subscriberIds: string[], onMessage: (message: string) => void): void {
+    const firestore = this.getFirestoreInstance();
+    if (!firestore) {
+      throw new Error('Firestore instance is not initialized.');
+    }
+    subscriberIds.forEach((subscriberId) => {
+      const messagesRef = collection(firestore, 'channels', channel, 'messages');
+      const q = query(
+        messagesRef,
+        orderBy('timestamp'),
+        where('read', '==', false),
+        where('subscriber', '==', subscriberId)
+      );
+      onSnapshot(q, async (snapshot) => {
+        for (const change of snapshot.docChanges()) {
+          if (change.type === 'added') {
+            const messageData = change.doc.data();
+            console.log(`Recebida mensagem do canal ${channel} por ${subscriberId}: ${messageData.message}`);
+            try {
+              await updateDoc(doc(firestore, 'channels', channel, 'messages', change.doc.id), { read: true });
+              onMessage(messageData.message); // Chama a função de callback com a mensagem recebida
+            } catch (error) {
+              console.error(`Erro ao processar a mensagem com ID ${change.doc.id}:`, error);
+            }
+          }
+        }
+      }, (err) => {
+        console.error('Erro ao escutar mensagens:', err);
+      });
+    });
+  }
+}
+
+export default PubSub;
