@@ -1,7 +1,7 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-const pubsub_1 = __importDefault(require("./pubsub"));
-exports.default = pubsub_1.default;
+exports.initializeFirestore = exports.subscribe = exports.publish = void 0;
+const pubsub_1 = require("./pubsub");
+Object.defineProperty(exports, "publish", { enumerable: true, get: function () { return pubsub_1.publish; } });
+Object.defineProperty(exports, "subscribe", { enumerable: true, get: function () { return pubsub_1.subscribe; } });
+Object.defineProperty(exports, "initializeFirestore", { enumerable: true, get: function () { return pubsub_1.initializeFirestore; } });

@@ -1,3 +1,3 @@
-import PubSub from './pubsub';
+import { publish, subscribe, initializeFirestore } from './pubsub';
 
-export default PubSub;
+export { publish, subscribe, initializeFirestore };

@@ -1,88 +1,130 @@
 
-# @savanapoint/pub-sub
 
-The `@savanapoint/pub-sub` library facilitates implementing a pub/sub messaging system using Firebase Firestore and TypeScript. It enables publishing messages to channels and subscribing to receive messages from those channels.
+# PubSub Legacy
 
-## Installation
+PubSub é uma biblioteca para gerenciar a publicação e assinatura de mensagens usando o Firebase Firestore.
 
-To install the library, run the following command:
+## Índice
 
-```bash
-npm install @savanapoint/pub-sub
-```
+- [Introdução](#introdução)
+- [Instalação](#instalação)
+- [Uso](#uso)
+  - [Inicialização](#inicialização)
+  - [Publicação de Mensagens](#publicação-de-mensagens)
+  - [Assinatura de Mensagens](#assinatura-de-mensagens)
+- [Contribuição](#contribuição)
+- [Licença](#licença)
 
-## Usage
+## Introdução
 
-### Initialization
+O PubSub é uma biblioteca para facilitar a comunicação assíncrona entre diferentes partes de um sistema usando o Firebase Firestore. Ele permite a publicação de mensagens em canais específicos e a assinatura para receber essas mensagens.
 
-First, initialize the `PubSub` class with your Firebase configuration:
+## Instalação
+
+Para instalar a biblioteca PubSub, siga os passos abaixo:
+
+
+  
+
+ Instalação :
+    ```sh
+    yarn add @savanapoint/pub-sub-legacy
+    ```
+
+ Ou:
+    ```sh
+    npm install @savanapoint/pub-sub-legacy
+    ```
+
+## Uso
+
+### Inicialização
+
+Antes de utilizar o PubSub, você precisa inicializar o Firebase Firestore com as suas configurações:
 
 ```typescript
-import PubSub from '@savanapoint/pub-sub';
+import { initializeFirestore } from '@savanapoint/pub-sub-legacy';
 
 const firebaseConfig = {
-  apiKey: process.env.FIREBASE_API_KEY,
-  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-  databaseURL: process.env.FIREBASE_DATABASE_URL,
-  projectId: process.env.FIREBASE_PROJECT_ID,
-  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.FIREBASE_APP_ID,
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_STORAGE_BUCKET",
+  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
 
-const pubSub = new PubSub(firebaseConfig);
+initializeFirestore(firebaseConfig);
 ```
 
-### Publish a Message
+### Publicação de Mensagens
 
-To publish a message to a channel, use the `publish` method of the `PubSub` class:
+Para publicar uma mensagem em um canal específico, utilize o método `publish`:
 
 ```typescript
-pubSub.publish('channelName', 'Hello, World!', ['subscriberId1', 'subscriberId2'])
-  .then(() => {
-    console.log('Message published successfully');
-  })
-  .catch((error) => {
-    console.error('Error publishing message:', error);
-  });
+import { publish } from '@savanapoint/pub-sub-legacy';
+
+const channel = 'testChannel';
+const message = 'Hello World';
+const subscribers = ['subscriber1', 'subscriber2'];
+
+publish(channel, message, subscribers).then(() => {
+  console.log('Mensagem publicada com sucesso!');
+}).catch((error) => {
+  console.error('Erro ao publicar mensagem:', error);
+});
 ```
 
-- **`channel`**: The name of the channel where the message will be published.
-- **`message`**: The content of the message to be published.
-- **`subscribers`**: List of subscriber IDs who will receive the message.
+### Assinatura de Mensagens
 
-### Subscribe to a Channel
-
-To subscribe to a channel and receive messages, use the `subscribe` method of the `PubSub` class:
+Para se inscrever em um canal e processar as mensagens recebidas, utilize o método `subscribe`:
 
 ```typescript
-pubSub.subscribe('channelName', ['subscriberId1', 'subscriberId2'], (message) => {
-    console.log('Received message:', message);
-  })
-  .catch((error) => {
-    console.error('Error subscribing to channel:', error);
-  });
+import { subscribe } from '@savanapoint/pub-sub-legacy';
+
+const channel = 'testChannel';
+const subscriberIds = ['subscriber1', 'subscriber2'];
+
+subscribe(channel, subscriberIds, (message) => {
+  console.log('Mensagem recebida:', message);
+});
 ```
 
-- **`channel`**: The name of the channel to which the subscribers are subscribing.
-- **`subscriberIds`**: List of subscriber IDs who should receive the messages.
-- **`onMessage`**: Callback function that will be called when a new message is received. It receives the message as an argument.
+## API
 
-### Error Handling
+### `initializeFirestore(firebaseConfig: object): void`
 
-- **Errors When Publishing Messages:** Any error that occurs during the publishing of the message will be caught and logged to the console.
-- **Errors When Subscribing to Channels:** Any error that occurs during subscription to the channel will be caught and logged to the console.
+Inicializa a instância do Firestore com a configuração fornecida.
 
-## Contributing
+- `firebaseConfig` - Objeto de configuração do Firebase.
 
-If you would like to contribute to the library, please follow these steps:
+### `publish(channel: string, message: string, subscribers: string[]): Promise<void>`
 
-1. Fork the repository.
-2. Create a branch for your changes.
-3. Make your modifications and test them.
-4. Submit a pull request to the main repository.
+Publica uma mensagem em um canal específico.
 
-## License
+- `channel` - Nome do canal.
+- `message` - Mensagem a ser publicada.
+- `subscribers` - Lista de IDs dos subscribers.
 
-The library is licensed under the [MIT License](LICENSE).
+### `subscribe(channel: string, subscriberIds: string[], onMessage: (message: string) => void): void`
+
+Inscreve um ou mais subscribers em um canal específico e processa mensagens recebidas.
+
+- `channel` - Nome do canal.
+- `subscriberIds` - IDs dos subscribers que devem receber as mensagens.
+- `onMessage` - Função callback que será chamada quando uma nova mensagem for recebida.
+
+## Contribuição
+
+Contribuições são bem-vindas! Se você tem alguma ideia, encontrou um bug ou tem uma sugestão de melhoria, sinta-se à vontade para abrir uma issue ou enviar um pull request.
+
+1. Fork o repositório.
+2. Crie sua branch de feature (`git checkout -b feature/nova-feature`).
+3. Commit suas mudanças (`git commit -m 'Adiciona nova feature'`).
+4. Faça o push para a branch (`git push origin feature/nova-feature`).
+5. Abra um pull request.
+
+## Licença
+
+Este projeto está licenciado sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
 
